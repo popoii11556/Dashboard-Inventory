@@ -1044,8 +1044,8 @@ function openKpiModal(mode) {
   const entries = Object.entries(fdata.itemData).sort((a,b) => b[1].given - a[1].given);
   const rows = entries.map(([item,v], i) => {
     const pct = v.req > 0 ? Math.round(v.given/v.req*100) : 0;
-    // เกณฑ์สี: 90-100% เขียว, 70-89% เหลือง, 0-69% แดง
-    const [pc, pb] = pct >= 90 ? ['#065F46','#D1FAE5'] : pct >= 70 ? ['#92400E','#FEF3C7'] : ['#991B1B','#FEE2E2'];
+    // เกณฑ์สี: 80-100% เขียว, 79-50% เหลือง, 49-0% แดง
+    const [pc, pb] = pct >= 80 ? ['#065F46','#D1FAE5'] : pct >= 60 ? ['#92400E','#FEF3C7'] : ['#991B1B','#FEE2E2'];
     return `<tr><td>${i+1}</td><td style="font-weight:600">${item}</td><td style="text-align:right">${v.req.toLocaleString()}</td><td style="text-align:right"><strong>${v.given.toLocaleString()}</strong></td><td style="text-align:right"><span style="padding:2px 9px;border-radius:20px;font-size:.72rem;background:${pb};color:${pc};font-weight:700">${pct}%</span></td></tr>`;
   }).join('');
   document.getElementById('kpiTitle').textContent = 'รายการพัสดุที่มีการเบิก';
