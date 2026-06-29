@@ -1050,7 +1050,7 @@ function openKpiModal(mode) {
   document.getElementById('kpiTitle').textContent = 'รายการพัสดุที่มีการเบิก';
   document.getElementById('kpiSub').textContent = entries.length + ' รายการ · '
     + '🟢 90-100% = จ่ายได้ดี  🟡 70-89% = พอรับได้  🔴 0-69% = ขาดของมาก';
-  document.getElementById('kpiHead').innerHTML = ['#','รายการ','ขอเบิก','จ่ายจริง','%'].map(h => `<th style="text-align:${['ขอเบิก','จ่ายจริง','%'].includes(h)?'right':'left'}">${h}</th>`).join('');
+  document.getElementById('kpiHead').innerHTML = ['#','รายการ','ขอเบิก','จ่ายจริง','ยอดที่จ่ายได้คิดเป็น%'].map(h => `<th style="text-align:${['ขอเบิก','จ่ายจริง','ยอดที่จ่ายได้คิดเป็น%'].includes(h)?'right':'left'}">${h}</th>`).join('');
   document.getElementById('kpiBody').innerHTML = rows;
   document.getElementById('kpiModal').style.display = 'flex';
 }
