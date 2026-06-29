@@ -1108,7 +1108,7 @@ function renderPurchase(cat) {
     const bc = (i.budget_cat || '').trim();
     return bc === cat;
   });
-  const headers = ['#','รายการ','ความถี่',givenHeader,'เกณฑ์','จำนวนทั้งหมด','คงเหลือ','ต้องซื้อ'];
+  const headers = ['#','รายการ','ความถี่ของการเบิก',givenHeader,'เกณฑ์จัดซื้อ','จำนวนทั้งหมด','คงเหลือ','ต้องซื้อ'];
   const centerCols = [givenHeader,'เกณฑ์','จำนวนทั้งหมด','คงเหลือ','ต้องซื้อ'];
   const pLabels = {
     1:'🔴 ระดับที่ 1 — จำเป็นเร่งด่วน (ความถี่สูง / สูงมาก)',
