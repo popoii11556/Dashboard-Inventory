@@ -288,7 +288,7 @@ header { padding-top: var(--sat); }
   <div class="tbar">
     <div class="tbar-inner">
       <button class="tbtn active" onclick="switchTab('inventory',this)">📦 ยอดคลังพัสดุ</button>
-      <button class="tbtn" onclick="switchTab('requisition',this)">📋 สรุปยอดการเบิก</button>
+      <button class="tbtn" onclick="switchTab('requisition',this)">📋 การเบิกพัสดุ</button>
       <button class="tbtn" onclick="switchTab('purchase',this)">📊 แผนจัดซื้อ</button>
     </div>
   </div>
@@ -297,33 +297,11 @@ header { padding-top: var(--sat); }
 <!-- PAGE 1: INVENTORY -->
 <div id="page-inventory" class="page active">
 <div class="container">
-  <div class="stitle">ภาพรวมคลังพัสดุทั้งหมด</div>
-  <div class="kgrid" id="invKpiGrid"></div>
-  <div class="cgrid cg3" style="margin-bottom:28px">
-    <div class="ccard">
-      <h3>สรุปการเบิกปี <span id="currentYearLabel"></span> แยกตามประเภท</h3>
-      <div class="csub">ยอดรวมที่จ่ายไปแล้วในปีปัจจุบัน — คลิกแท่งเพื่อดูรายละเอียดประเภท</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:10px 0 12px">
-        <button class="qbtn active" data-q="0" onclick="switchQuarter(0,this)">ทั้งปี</button>
-        <button class="qbtn" data-q="1" onclick="switchQuarter(1,this)">ไตรมาส 1 (ม.ค.–มี.ค.)</button>
-        <button class="qbtn" data-q="2" onclick="switchQuarter(2,this)">ไตรมาส 2 (เม.ย.–มิ.ย.)</button>
-        <button class="qbtn" data-q="3" onclick="switchQuarter(3,this)">ไตรมาส 3 (ก.ค.–ก.ย.)</button>
-        <button class="qbtn" data-q="4" onclick="switchQuarter(4,this)">ไตรมาส 4 (ต.ค.–ธ.ค.)</button>
-      </div>
-      <div class="cwrap" style="height:280px"><canvas id="typeBarChart"></canvas></div>
-    </div>
-    <div class="ccard">
-      <h3>รายการที่ต้องจัดซื้อ แยกตามระดับ</h3>
-      <div class="csub">คลิกที่แท่งเพื่อดูรายละเอียด — เกณฑ์จัดซื้อ / คงเหลือ / ต้องซื้อ</div>
-      <div class="cwrap" style="height:300px"><canvas id="statusDonutChart"></canvas></div>
-    </div>
-  </div>
   <div class="stitle">ตารางรายการพัสดุทั้งหมด</div>
   <div class="tcard">
     <div class="thead2">
       <h3>รายการพัสดุ <span id="invCount" style="color:var(--muted);font-weight:400;font-size:.82rem"></span></h3>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select class="fsel" id="typeFilter" onchange="filterTable()"><option value="">ทุกประเภท</option></select>
         <select class="fsel" id="statusFilter" onchange="filterTable()">
           <option value="">ทุกสถานะ</option>
           <option value="ปกติ">ปกติ</option>
@@ -337,8 +315,9 @@ header { padding-top: var(--sat); }
         <button class="btbtn" onclick="openReportModal()" style="background:#6D28D9;display:flex;align-items:center;gap:6px">
           📊 รายงาน
         </button>
-        <button class="btbtn" onclick="resetSelections()" title="รีเซ็ตการเลือก" style="background:var(--muted);padding:8px 12px">🔄</button>
+        <button class="btbtn" onclick="resetSelections()" title="ล้างตัวกรอง" style="background:var(--muted);display:flex;align-items:center;gap:6px">🔄 ล้างตัวกรอง</button>
       </div>
+      <div id="typeFilterBtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"></div>
     </div>
     <div class="tscroll">
       <table><thead><tr>
@@ -438,6 +417,43 @@ header { padding-top: var(--sat); }
   <div class="mhdr"><div><h3 id="gapTitle"></h3><div class="msub" id="gapSub"></div></div><button class="mclose" onclick="closeModal('gapModal')">✕</button></div>
   <div class="mbody"><table class="mtbl"><thead><tr><th>#</th><th>รายการ</th><th style="text-align:right">ขอเบิก</th><th style="text-align:right">จ่ายจริง</th><th style="text-align:right">จำนวนที่จะไม่จ่าย</th></tr></thead><tbody id="gapBody"></tbody></table></div>
 </div></div>
+
+<!-- REQUISITION PICKER MODAL (หน้าการเบิกพัสดุ) -->
+<div class="modal" id="reqPickModal">
+  <div class="mbox" style="max-width:920px">
+    <div class="mhdr">
+      <div><h3>📝 เลือกรายการเบิกพัสดุ</h3><div class="msub">เลือกรายการที่ต้องการเบิก แล้วกด "ส่งออก"</div></div>
+      <button class="mclose" onclick="closeModal('reqPickModal')">✕</button>
+    </div>
+    <div class="mbody">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <select class="fsel" id="reqPickStatusFilter" onchange="filterPickTable()">
+          <option value="">ทุกสถานะ</option>
+          <option value="ปกติ">ปกติ</option>
+          <option value="ต่ำกว่าเกณฑ์">ต่ำกว่าเกณฑ์</option>
+          <option value="หมด">หมด</option>
+        </select>
+        <input type="text" class="sbox" placeholder="🔍 ค้นหารายการ..." id="reqPickSearch" oninput="filterPickTable()" style="width:220px">
+        <button class="btbtn" onclick="openRequisitionModalFromPicker()" style="background:var(--blue);display:flex;align-items:center;gap:6px;margin-left:auto">
+          📤 ส่งออก <span id="reqPickSelectedCount" style="background:rgba(255,255,255,.25);border-radius:20px;padding:1px 8px;font-size:.75rem">0</span>
+        </button>
+      </div>
+      <div id="reqPickTypeBtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div class="tscroll" style="max-height:400px">
+        <table><thead><tr>
+          <th style="width:36px;text-align:center"><input type="checkbox" id="reqPickCheckAll" onchange="togglePickAllCheck(this)" style="cursor:pointer;width:15px;height:15px"></th>
+          <th style="width:50px">ลำดับ</th><th style="width:160px">ประเภท</th><th>รายการ</th>
+          <th style="width:100px;text-align:center">รหัสพัสดุ</th>
+          <th style="width:70px;text-align:center">คงเหลือ</th>
+          <th style="width:90px;text-align:center">เบิกได้/ต่อครั้ง</th>
+          <th style="width:80px;text-align:center">ปริมาณคงคลังที่กำหนด</th>
+          <th style="width:110px">สถานะ</th>
+        </tr></thead><tbody id="reqPickBody"></tbody></table>
+      </div>
+      <div class="pgn" id="reqPickPgn"></div>
+    </div>
+  </div>
+</div>
 
 <!-- REQUISITION MODAL -->
 <div class="modal" id="requisitionModal">
@@ -995,214 +1011,37 @@ async function loadData() {
 let filteredInv = [], invPage = 1;
 const PGS = 20;
 
+let currentTypeFilter = '';
+let invTypeList = [];
+
 function initInventory() {
   filteredInv = [...inventory];
 
-  // KPI cards — เหลือแค่ 2 card
-  const total      = inventory.length;
-  const outOfStock = inventory.filter(i => i.remaining === 0).length;
-  const types      = [...new Set(inventory.map(i => i.type))].filter(Boolean);
+  const total = inventory.length;
+  const types = [...new Set(inventory.map(i => i.type))].filter(Boolean);
 
-  // นับรายการและยอดคงเหลือแต่ละประเภท (ใช้สำหรับกราฟและ dropdown)
-  const typeSummary = {};
-  inventory.forEach(i => {
-    if (!typeSummary[i.type]) typeSummary[i.type] = { count: 0, remaining: 0 };
-    typeSummary[i.type].count++;
-    typeSummary[i.type].remaining += i.remaining;
-  });
-
-  document.getElementById('invKpiGrid').innerHTML = `
-    <div class="kcard blue" onclick="openInvAllModal()"><div class="kicon">📦</div><div class="klbl">รายการพัสดุทั้งหมด</div><div class="kval">${total}</div><div class="ksub">รายการ 🔍</div></div>
-    <div class="kcard orange" onclick="openStatusModal('หมด')"><div class="kicon">🔴</div><div class="klbl">รายการหมด</div><div class="kval">${outOfStock}</div><div class="ksub">remaining = 0 🔍</div></div>
-  `;
   document.getElementById('invCount').textContent = `(${total} รายการ)`;
 
-  // Type filter dropdown
-  const tf = document.getElementById('typeFilter');
-  tf.innerHTML = '<option value="">ทุกประเภท</option>';
-  types.forEach(t => {
-    const o = document.createElement('option');
-    o.value = t;
-    o.textContent = t.replace('ประเภท','').trim();
-    tf.appendChild(o);
-  });
-
-  Chart.defaults.font.family = "'IBM Plex Sans Thai',sans-serif";
-
-  // ===== กราฟบน: สรุปการเบิกปีปัจจุบัน แยกตามประเภท =====
-  const currentBE = new Date().getFullYear() + 543;
-  const elYear = document.getElementById('currentYearLabel');
-  if (elYear) elYear.textContent = currentBE;
-
-  // เดือนของแต่ละไตรมาส (เดือนไทย)
-  const quarterMonths = {
-    1: ['มกราคม','กุมภาพันธ์','มีนาคม'],
-    2: ['เมษายน','พฤษภาคม','มิถุนายน'],
-    3: ['กรกฎาคม','สิงหาคม','กันยายน'],
-    4: ['ตุลาคม','พฤศจิกายน','ธันวาคม'],
-  };
-
-  window._currentQuarter = 0; // 0 = ทั้งปี
-  window._currentBE      = currentBE;
-
-  function buildCurrentYearMap(quarter) {
-    const recs = requisitionRecords.filter(r =>
-      r.year === currentBE &&
-      r.given > 0 && // เฉพาะที่จ่ายจริง
-      (quarter === 0 || quarterMonths[quarter].includes(r.month))
-    );
-    const map = {};
-    recs.forEach(r => { map[r.item] = (map[r.item] || 0) + r.given; });
-    return map;
-  }
-
-  function renderTypeBarChart(quarter) {
-    const cyMap = buildCurrentYearMap(quarter);
-    window.givenByItemCurrentYear = cyMap;
-
-    // เฉพาะประเภทที่มีการจ่ายจริง
-    const typeGivenCurrent = {};
-    types.forEach(t => { typeGivenCurrent[t] = 0; });
-    Object.entries(cyMap).forEach(([item, given]) => {
-      const inv = inventory.find(i => i.item === item);
-      if (inv) typeGivenCurrent[inv.type] = (typeGivenCurrent[inv.type] || 0) + given;
-    });
-
-    const activeT  = types.filter(t => (typeGivenCurrent[t] || 0) > 0);
-    const tLbls    = activeT.map(t => t.replace('ประเภท','').trim());
-    const tVals    = activeT.map(t => Math.round(typeGivenCurrent[t]));
-
-    if (typeChartInst) typeChartInst.destroy();
-    typeChartInst = new Chart(document.getElementById('typeBarChart'), {
-      type: 'bar',
-      data: {
-        labels: tLbls,
-        datasets: [{
-          label: `ยอดจ่ายปี ${currentBE} (ชิ้น)`,
-          data: tVals,
-          backgroundColor: pal.slice(0, activeT.length).map(c => c + 'CC'),
-          borderColor: pal.slice(0, activeT.length),
-          borderWidth: 1.5,
-          borderRadius: 6,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString()} ชิ้น` } }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 30 } },
-          y: { grid: { color: '#EEF0F5' }, ticks: { font: { size: 11 } }, beginAtZero: true,
-               title: { display: true, text: 'จำนวน (ชิ้น)', font: { size: 10 }, color: '#64748B' } }
-        }
-      },
-      plugins: [{
-        id: 'valueLabels',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          ctx.save();
-          ctx.font = 'bold 11px IBM Plex Sans Thai,sans-serif';
-          ctx.fillStyle = '#1A1A2E';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          chart.getDatasetMeta(0).data.forEach((bar, i) => {
-            if (tVals[i] > 0) ctx.fillText(tVals[i].toLocaleString(), bar.x, bar.y - 4);
-          });
-          ctx.restore();
-        }
-      }]
-    });
-
-    // click → เปิด modal เฉพาะรายการที่จ่ายจริง
-    document.getElementById('typeBarChart').onclick = e => {
-      const pts = typeChartInst.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
-      if (!pts.length) return;
-      const fullType = activeT[pts[0].index];
-      const itemsWithGiven = new Set(
-        Object.entries(cyMap).filter(([,v]) => v > 0).map(([k]) => k)
-      );
-      openTypeDetailModalFiltered(fullType, itemsWithGiven);
-    };
-  }
-
-  window.switchQuarter = function(q, btn) {
-    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    window._currentQuarter = q;
-    renderTypeBarChart(q);
-  };
-
-  renderTypeBarChart(0); // เริ่มต้นที่ทั้งปี
-
-  // ===== กราฟล่าง: รายการต้องจัดซื้อ แยกตามระดับ (ไม่มี "ไม่จัดซื้อ") =====
-  const purchase  = window.purchaseData  || [];
-  const p1 = purchase.filter(i => calcPriority(i.freq, i) === 1);
-  const p2 = purchase.filter(i => calcPriority(i.freq, i) === 2);
-  const p3 = purchase.filter(i => calcPriority(i.freq, i) === 3);
-
-  const levelLabels = ['ระดับ 1 — จำเป็นเร่งด่วน', 'ระดับ 2 — ปานกลาง', 'ระดับ 3 — ต่ำ'];
-  const levelCounts = [p1.length, p2.length, p3.length];
-  const levelColors = ['#E84646BB','#F0A500BB','#2ECC8ABB'];
-  const levelBorders= ['#E84646',  '#F0A500',  '#2ECC8A'];
-  const levelData   = [p1, p2, p3];
-
-  let statusChartInst = Chart.getChart('statusDonutChart');
-  if (statusChartInst) statusChartInst.destroy();
-
-  const purchaseLevelChart = new Chart(document.getElementById('statusDonutChart'), {
-    type: 'bar',
-    data: {
-      labels: levelLabels,
-      datasets: [{
-        label: 'จำนวนรายการ',
-        data: levelCounts,
-        backgroundColor: levelColors,
-        borderColor: levelBorders,
-        borderWidth: 1.5,
-        borderRadius: 6,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} รายการ — คลิกเพื่อดูรายละเอียด` } }
-      },
-      scales: {
-        x: { grid: { color: '#EEF0F5' }, ticks: { font: { size: 11 } } },
-        y: { grid: { display: false }, ticks: { font: { size: 12 } } }
-      }
-    },
-    plugins: [{
-      id: 'valueLabels',
-      afterDatasetsDraw(chart) {
-        const { ctx } = chart;
-        ctx.save();
-        ctx.font = 'bold 11px IBM Plex Sans Thai,sans-serif';
-        ctx.fillStyle = '#1A1A2E';
-        ctx.textBaseline = 'middle';
-        chart.getDatasetMeta(0).data.forEach((bar, i) => {
-          if (levelCounts[i] > 0)
-            ctx.fillText(`${levelCounts[i]} รายการ`, bar.x + 6, bar.y);
-        });
-        ctx.restore();
-      }
-    }]
-  });
-
-  document.getElementById('statusDonutChart').addEventListener('click', e => {
-    const pts = purchaseLevelChart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
-    if (!pts.length) return;
-    const idx = pts[0].index;
-    openPurchaseLevelModal(levelLabels[idx], levelData[idx]);
-  });
+  // Type filter buttons
+  invTypeList = types;
+  currentTypeFilter = '';
+  renderTypeFilterButtons();
 
   renderTable();
+}
+
+function renderTypeFilterButtons() {
+  const wrap = document.getElementById('typeFilterBtns');
+  if (!wrap) return;
+  wrap.innerHTML =
+    `<button class="qbtn ${currentTypeFilter===''?'active':''}" onclick="setTypeFilter(-1)">ทุกประเภท</button>` +
+    invTypeList.map((t,i) => `<button class="qbtn ${currentTypeFilter===t?'active':''}" onclick="setTypeFilter(${i})">${t.replace('ประเภท','').trim()}</button>`).join('');
+}
+
+function setTypeFilter(idx) {
+  currentTypeFilter = idx === -1 ? '' : invTypeList[idx];
+  renderTypeFilterButtons();
+  filterTable();
 }
 
 function openTypeDetailModalFiltered(fullType, itemsWithReq) {
@@ -1281,7 +1120,7 @@ function openTypeDetailModal(fullType) {
 
 function filterTable() {
   const q = document.getElementById('searchBox').value.toLowerCase();
-  const t = document.getElementById('typeFilter').value;
+  const t = currentTypeFilter;
   const s = document.getElementById('statusFilter').value;
   filteredInv = inventory.filter(i => (!t || i.type === t) && (!q || i.item.toLowerCase().includes(q)) && (!s || getStatus(i) === s));
   invPage = 1; renderTable();
@@ -1422,6 +1261,7 @@ function updateDashboard() {
   const fdata = getFilteredData();
   document.getElementById('kpiContainer').innerHTML = `
     <div class="kcard blue" onclick="openKpiModal('all')"><div class="kicon">📋</div><div class="klbl">รายการเบิกทั้งหมด 🔍</div><div class="kval">${Object.keys(fdata.itemData).length}</div><div class="ksub">รายการ</div></div>
+    <div class="kcard green" onclick="openReqPickModal()"><div class="kicon">📝</div><div class="klbl">เบิกพัสดุ</div><div class="kval" style="font-size:1.15rem">เลือกรายการ</div><div class="ksub">คลิกเพื่อเบิกพัสดุ 🔍</div></div>
   `;
   const depts = Object.entries(fdata.deptData).sort((a,b) => b[1].given - a[1].given);
   document.getElementById('deptBody').innerHTML = depts.map(([dept, v], i) => {
@@ -1822,6 +1662,111 @@ function toggleAllCheck(cb) {
 function updateSelectedCount() {
   const el = document.getElementById('selectedCount');
   if (el) el.textContent = selectedItems.size;
+  const el2 = document.getElementById('reqPickSelectedCount');
+  if (el2) el2.textContent = selectedItems.size;
+}
+
+// ============================================================
+//  REQUISITION PICKER MODAL — หน้า "การเบิกพัสดุ" ปุ่ม "เบิกพัสดุ"
+// ============================================================
+let pickFilteredInv = [], pickPage = 1, currentPickTypeFilter = '', pickTypeList = [];
+const PGS_PICK = 20;
+
+function openReqPickModal() {
+  pickTypeList = [...new Set(inventory.map(i => i.type))].filter(Boolean);
+  currentPickTypeFilter = '';
+  pickFilteredInv = [...inventory];
+  pickPage = 1;
+
+  const searchEl = document.getElementById('reqPickSearch');
+  const statusEl = document.getElementById('reqPickStatusFilter');
+  if (searchEl) searchEl.value = '';
+  if (statusEl) statusEl.value = '';
+  const ca = document.getElementById('reqPickCheckAll');
+  if (ca) ca.checked = false;
+
+  renderPickTypeFilterButtons();
+  renderPickTable();
+  document.getElementById('reqPickModal').style.display = 'flex';
+}
+
+function renderPickTypeFilterButtons() {
+  const wrap = document.getElementById('reqPickTypeBtns');
+  if (!wrap) return;
+  wrap.innerHTML =
+    `<button class="qbtn ${currentPickTypeFilter===''?'active':''}" onclick="setPickTypeFilter(-1)">ทุกประเภท</button>` +
+    pickTypeList.map((t,i) => `<button class="qbtn ${currentPickTypeFilter===t?'active':''}" onclick="setPickTypeFilter(${i})">${t.replace('ประเภท','').trim()}</button>`).join('');
+}
+
+function setPickTypeFilter(idx) {
+  currentPickTypeFilter = idx === -1 ? '' : pickTypeList[idx];
+  renderPickTypeFilterButtons();
+  filterPickTable();
+}
+
+function filterPickTable() {
+  const q = (document.getElementById('reqPickSearch').value || '').toLowerCase();
+  const t = currentPickTypeFilter;
+  const s = document.getElementById('reqPickStatusFilter').value;
+  pickFilteredInv = inventory.filter(i => (!t || i.type === t) && (!q || i.item.toLowerCase().includes(q)) && (!s || getStatus(i) === s));
+  pickPage = 1;
+  renderPickTable();
+}
+
+function renderPickTable() {
+  const start = (pickPage - 1) * PGS_PICK;
+  document.getElementById('reqPickBody').innerHTML = pickFilteredInv.slice(start, start + PGS_PICK).map((item, idx) => {
+    const st = getStatus(item), bc = getBadgeClass(st);
+    const isChecked  = selectedItems.has(item.item);
+    const parcelCode = item.parcel_code || '';
+    return `<tr>
+      <td style="text-align:center"><input type="checkbox" class="pickItemCheck" data-item="${item.item}" ${isChecked?'checked':''} onchange="togglePickItemCheck(this)" style="cursor:pointer;width:15px;height:15px"></td>
+      <td style="text-align:center;color:var(--muted);font-size:.75rem">${start+idx+1}</td>
+      <td><span class="ttag">${item.type.replace('ประเภท','').trim()}</span></td>
+      <td style="font-weight:500">${item.item}</td>
+      <td style="text-align:center;font-size:.78rem;color:${parcelCode?'var(--blue)':'var(--muted)'}">${parcelCode || '—'}</td>
+      <td style="text-align:center"><strong>${item.remaining}</strong></td>
+      <td style="text-align:center"><strong style="color:var(--blue)">${item.qty_per||'—'}</strong></td>
+      <td style="text-align:center;color:var(--muted)">${item.full_stock||'—'}</td>
+      <td><span class="badge ${bc}">${st}</span></td>
+    </tr>`;
+  }).join('');
+  updateSelectedCount();
+  const total = Math.ceil(pickFilteredInv.length / PGS_PICK);
+  let pg = `<span>แสดง ${Math.min((pickPage-1)*PGS_PICK+1,pickFilteredInv.length)}–${Math.min(pickPage*PGS_PICK,pickFilteredInv.length)} จาก ${pickFilteredInv.length}</span>`;
+  pg += `<button class="pgbtn" onclick="chPickPg(-1)" ${pickPage===1?'disabled':''}>◀</button>`;
+  for (let i = Math.max(1,pickPage-2); i <= Math.min(total,pickPage+2); i++) pg += `<button class="pgbtn ${i===pickPage?'active':''}" onclick="goPickPg(${i})">${i}</button>`;
+  pg += `<button class="pgbtn" onclick="chPickPg(1)" ${pickPage===total?'disabled':''}>▶</button>`;
+  document.getElementById('reqPickPgn').innerHTML = pg;
+}
+
+function chPickPg(d) { pickPage += d; renderPickTable(); }
+function goPickPg(p) { pickPage = p; renderPickTable(); }
+
+function togglePickItemCheck(cb) {
+  const name = cb.dataset.item;
+  if (cb.checked) selectedItems.add(name);
+  else selectedItems.delete(name);
+  updateSelectedCount();
+}
+
+function togglePickAllCheck(cb) {
+  document.querySelectorAll('.pickItemCheck').forEach(c => {
+    c.checked = cb.checked;
+    const name = c.dataset.item;
+    if (cb.checked) selectedItems.add(name);
+    else selectedItems.delete(name);
+  });
+  updateSelectedCount();
+}
+
+function openRequisitionModalFromPicker() {
+  if (selectedItems.size === 0) {
+    alert('กรุณาเลือกรายการพัสดุก่อนครับ');
+    return;
+  }
+  closeModal('reqPickModal');
+  openRequisitionModal();
 }
 
 function openRequisitionModal() {
